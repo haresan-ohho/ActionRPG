@@ -3,7 +3,7 @@ enchant();
 window.onload = function() {
     var game = new Game(320, 320);
     game.fps = 15;
-    game.preload('map1.gif', 'chara0.gif','chara5.png','icon0.gif');
+    game.preload('map1.gif', 'chara0.gif','chara5.png','icon0.gif','enemyright1.png','enemyright2.png','enemyright3.png','enemyleft1.png','enemyleft2.png','enemyleft3.png');
     game.onload = function() {
         var map = new Map(16, 16);
         var test = new Label();
@@ -140,9 +140,16 @@ window.onload = function() {
         ]);
 
         var player = new Sprite(32, 32);
-        var enemy = new Sprite(32,32);
+        var enemy = new Sprite(64,32);
         var life =[new Sprite(16,16),new Sprite(16,16),new Sprite(16,16),new Sprite(16,16),new Sprite(16,16),new Sprite(16,16)];
         var hitbox = new Sprite(16,32);
+
+        var enemyimage = new Array(3);
+        for (var i = 0; i < 2; i++) {
+        enemyimage[i] = [new Surface(64,32),new Surface(64,32),new Surface(64,32)];
+        }
+
+        
 
         player.x = 9 * 16 - 8;
         player.y = 6 * 16;
@@ -177,14 +184,23 @@ window.onload = function() {
        var image3 = new Surface(320, 128);
        image3.draw(game.assets['map1.gif'], 0, 0, 320, 128, 0 , 0, 320, 128);
 
+       enemyimage[0][0].draw(game.assets['enemyright1.png'], 0, 0, 64, 32, 0 , 0, 64, 32);
+       enemyimage[0][1].draw(game.assets['enemyright2.png'], 0, 0, 64, 32, 0 , 0, 64, 32);
+       enemyimage[0][2].draw(game.assets['enemyright3.png'], 0, 0, 64, 32, 0 , 0, 64, 32);
+       enemyimage[1][0].draw(game.assets['enemyleft1.png'], 0, 0, 64, 32, 0 , 0, 64, 32);
+       enemyimage[1][1].draw(game.assets['enemyleft2.png'], 0, 0, 64, 32, 0 , 0, 64, 32);
+       enemyimage[1][2].draw(game.assets['enemyleft3.png'], 0, 0, 64, 32, 0 , 0, 64, 32);
+
+
         player.image = image;
-        enemy.image = image1;
-        hitbox.image = image3;
+        enemy.image = enemyimage[0][0];
         life[0].image = image2; 
         life[1].image = image2; 
         life[2].image = image2; 
         life[3].image = image2; 
-        life[4].image = image2; 
+        life[4].image = image2;
+        
+        
 
         player.isMoving = false;
         player.direction = 0;
@@ -192,7 +208,7 @@ window.onload = function() {
         player.hp = 5;
 
         enemy.isMoving = false;
-        enemy.direction = 0;
+        enemy.direction = 1;
         enemy.walk = 1;
 
         life[0].frame = 10;
@@ -206,45 +222,57 @@ window.onload = function() {
         game.keybind(90, "a");
 
         enemy.addEventListener('enterframe', function() {         
-            
-//            if (enemy.isMoving) {
-  //            enemy.moveBy(enemy.vx, enemy.vy);
+            this.image = enemyimage[this.direction - 1][this.walk];
+            if (this.isMoving) {
+                this.moveBy(this.vx, this.vy);
  
-             if (!(game.frame % 3)) {
-                 enemy.frame++;
-                 enemy.frame %= 3;
+                if (!(game.frame % 3)) {
+                    this.walk++;
+                    this.walk %= 3;
+                }
+                if ((this.vx && (this.x-8) % 16 == 0) || (this.vy && this.y % 16 == 0)) {
+                    this.isMoving = false;
+                    this.walk = 1;
+                }
+            } else {
+		var dir = Math.floor(Math.random()*4+1);
+		var move = Math.floor(Math.random()*10); 
+                this.vx = this.vy = 0;
+                if (dir == 4 && !move) {
+                    this.direction = 2;
+//                    enemy.image=image7;
+                    this.vx = -4;
+                } else if (dir == 2 && !move) {
+                    this.direction = 1;
+//                    enemy.image=image4;
+                    this.vx = 4;
+                } else if (dir == 1 && !move) {
+                    this.vy = -4;
+                } else if (dir == 3 && !move) {
+                    this.vy = 4;
+                }
+                if (this.vx || this.vy) {
+                    var x = this.x + (this.vx ? this.vx / Math.abs(this.vx) * 16 : 0) + 16;
+                    var y = this.y + (this.vy ? this.vy / Math.abs(this.vy) * 16 : 0) + 16;
+                    if (0 <= x && x < map.width && 0 <= y && y < map.height && !map.hitTest(x, y)) {
+                        this.isMoving = true;
+                        arguments.callee.call(this);
+                    }
+                }
+            }
+             if(enemy.intersect(hitbox)){
+
+                if (player.direction == 1) {
+                    enemy.x = enemy.x - 8;
+                } if (player.direction == 2) {
+                    enemy.x = enemy.x + 8;
+                } if (player.direction == 3) {
+                    enemy.y = enemy.y - 8;
+                } if (player.direction == 0) {
+                    enemy.y = enemy.y + 8;
+                } 
+                   test.text = "hit";
              }
-//                if ((enemy.vx && (enemy.x-8) % 16 == 0) || (enemy.vy && enemy.y % 16 == //0)) {
-//                    enemy.isMoving = false;
-//                    enemy.walk = 1;
-//                }
-//            } else{
-                
-//                enemy.vx = enemy.vy = 0;
-//                  if (player.vx < enemy.vx) {
-//                    enemy.direction = 1;
-//                    enemy.vx = -8;
-//                  }if (player.vx > enemy.vx) {
-//                    enemy.direction = 2;
-//                    enemy.vx = 8;
-//                  }if (player.vy < enemy.vy) {
-//                    enemy.direction = 3;
-//                    enemy.vy = -8;
-//                  }if (player.vy > enemy.vy) {
-//                    enemy.direction = 0;
-//                    enemy.vy = 8;
-//                } 
-//                    enemy.frame = enemy.direction * 9 + 6;
-//                }
-//                if (enemy.vx || enemy.vy) {
-//                    var x = enemy.x + (enemy.vx ? enemy.vx / Math.abs(enemy.vx) * 16 : //0) + 16;
-//                   var y = enemy.y + (enemy.vy ? enemy.vy / Math.abs(enemy.vy) * 16 : 0) //+ 16;
-//                    if (0 <= x && x < map.width && 0 <= y && y < map.height && //map.hitTest(x, y)) {
-//                         enemy.isMoving = true;
-//                        arguments.callee.call(this);
-//                    }
-//                }
-//            }
           });
 
         player.addEventListener('enterframe', function() {
@@ -287,7 +315,8 @@ window.onload = function() {
                         hitbox.y = player.y;
                     }else{
                         hitbox.rotation = 90;
-                        hitbox.y = player.y;
+                        hitbox.x = player.x + 7;
+                        hitbox.y = player.y + (-8 * player.direction)+9;
                         }
                     
                     if(game.frame % 3 == 0){
@@ -334,7 +363,7 @@ window.onload = function() {
 
         game.rootScene.addEventListener('enterframe', function(e) {
             if(-1<=player.hp){
-                 test.text = player.hp;
+                 
                  for(var v=5; v >=player.hp; v--) { life[v].visible = false; }
             }
    
